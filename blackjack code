@@ -173,6 +173,8 @@ bool displayDeal = false;
 int choice;
 int hit = 0;
 int stand = 1;
+int playerCard;
+int dealerCard;
 
 void displayHands() {
   lcd.setCursor(0, 0);
@@ -259,7 +261,7 @@ void loop() { //maybe have the welcome to blackjack section be a waiting screen 
   lcd.setCursor(0,0);
   lcd.print("   Welcome to"); //spacing to center it
   lcd.setCursor(0,1);
-  lcd.print("   Blackjack"); 
+  lcd.print("   Blackjack");
   if (digitalRead(button) == 0) {
     if (gamesPlayed == 0) {
       lcd.clear();
@@ -267,83 +269,157 @@ void loop() { //maybe have the welcome to blackjack section be a waiting screen 
       lcd.print("Please Scan Card");
       cardBalence = 100; //placeholder for RFID      
     }
-    sevseg.setNumber(cardBalence);
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("Place your Bet");
-    lcd.setCursor(0, 1);
-    lcd.print("bet: $");
-    int currentBet = 5;
-    while (digitalRead(button)!= 0) {
-      lcd.setCursor(6, 1);
-      if (analogRead(yPin) > 520; currentBet <= (cardBalence - 5)) {
-        currentBet += 5;
-        lcd.print(currentBet);
+    while (cardBalence > 0) {
+      sevseg.setNumber(cardBalence);
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Place your Bet");
+      lcd.setCursor(0, 1);
+      lcd.print("bet: $");
+      int currentBet = 5;
+      while (digitalRead(button)!= 0) {
+        lcd.setCursor(6, 1);
+        if (analogRead(yPin) > 520; currentBet <= (cardBalence - 5)) {
+          currentBet += 5;
+          lcd.print(currentBet);
+        }
+        else if (analogRead(yPin) < 480; currentBet >= 10) {
+          currentBet -= 5;
+          lcd.print(currentBet);
+        }
       }
-      else if (analogRead(yPin) < 480; currentBet >= 10) {
-        currentBet -= 5;
-        lcd.print(currentBet);
+      //reset hands
+      handTotal[dealer][0] = 0;
+      handTotal[dealer][1] = 0;
+      handTotal[player][0] = 0;
+      handTotal[player][1] = 0;
+      cards_dealt = 0;
+      displayDeal = false;
+      setupDeck();
+      int a = 0; //switchs to case where ace is 1 for player
+      int b = 0; //switchs to case where ace is 1 for dealer
+      dealCard(dealer);
+      dealCard(player);
+      dealCard(dealer);
+      dealCard(player);
+      dealerCard = 2;
+      playerCard = 2;
+      displayHands();
+      if (handTotal[player][a] > 21) {
+        a = 1;
       }
-    }
-    //reset hands
-    handTotal[dealer][0] = 0;
-    handTotal[dealer][1] = 0;
-    handTotal[player][0] = 0;
-    handTotal[player][1] = 0;
-    cards_dealt = 0;
-    displayDeal = false;
-    setupDeck();
-    int a = 0; //switchs to case where ace is 1 for player
-    int b = 0; //switchs to case where ace is 1 for dealer
-    dealCard(dealer);
-    dealCard(player);
-    dealCard(dealer);
-    dealCard(player);
-    displayHands();
-    if (handTotal[player][a] > 21) {
-      a = 1;
-    }
-    if (handTotal[dealer][b] > 21) {
-      b = 1;
-    }
-    if (handTotal[player][a] == 21) {  //player natural blackjack
-      if (handTotal[dealer][b] == 21) {
-        lcd.print("You Push");
+      if (handTotal[dealer][b] > 21) {
+        b = 1;
       }
-      else {
-        lcd.print("Player Blackjack");
-        cardBalence += currentBet;
+      if (handTotal[player][a] == 21) {  //player natural blackjack
+      displayDeal = true;
+      displayHands();   
+        if (handTotal[dealer][b] == 21) {
+          lcd.print("You Push");
+        }
+        else {
+          lcd.print("Player Blackjack");
+          cardBalence += currentBet;
+        }
       }
-    }
-    else { //need to add some sort of loop here to allow player to choose to hit multiple times
-      do {
-        lcd.setCursor(15, 0);
-        lcd.print("H");
-        lcd.setCursor(15, 1);
-        lcd.print("S");
-        while (digitalRead(button) != 0) {
-          if (analogRead(yPin) > 520) {
-            lcd.setCursor(14, 0);
-            lcd.blink();
-            if (digitalRead(button) == 0) { //this might not work as it might cancel the while loop before running the choice
-              choice = hit;
+      else { //need to add some sort of loop here to allow player to choose to hit multiple times
+        do {
+          lcd.setCursor(15, 0);
+          lcd.print("H");
+          lcd.setCursor(15, 1);
+          lcd.print("S");
+          while (digitalRead(button) != 0) {
+            if (analogRead(yPin) > 520) {
+              lcd.setCursor(14, 0);
+              lcd.blink();
+              if (digitalRead(button) == 0) { //this might not work as it might cancel the while loop before running the choice
+                choice = hit;
+              }
+            }
+            else if (analogRead(yPin) < 480) {
+              lcd.setCursor(14, 1);
+              lcd.blink();
+              if (digitalRead(button) == 0) { //this might not work as it might cancel the while loop before running the choice
+                choice = stand;
+              }
+            }        
+          }
+          if (choice = hit) {
+            dealCard(player);
+            displayHands();
+            playerCard += 1;
+            if (handTotal[player][a] > 21) {
+              a = 1;
             }
           }
-          else if (analogRead(yPin) < 480) {
-            lcd.setCursor(14, 1);
-            lcd.blink();
-            if (digitalRead(button) == 0) { //this might not work as it might cancel the while loop before running the choice
-              choice = stand;
-            }
-          }        
+        } while (playerCard < 6 && handTotal[player][a] < 21 && choice != stand);
+        //for the cards dealt you have to account for the 2 cards in the dealers hand
+        if (handTotal[player][a] > 21) {
+          delay(4000);
+          lcd.clear();
+          lcd.setCursor(0, 0);
+          lcd.print("You Bust");
+          cardBalence -= currentBet;
         }
-        if (choice = hit) {
-          dealCard(player);
+        else {
+          displayDeal = true;
           displayHands();
-          if (handTotal[])
+          if (handTotal[dealer][b] == 21) {
+            delay(4000); //4 second delay
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print("Dealer Blackjack");
+            lcd.setCursor(0, 1);
+            lcd.print("You lose");
+            cardBalence -= currentBet;
+          }
+          else {
+            while (dealerCard < 6 && handTotal[dealer][b] < 17) {
+              dealCard(dealer);
+              dealerCard += 1;
+              displayHands();
+              if (handTotal[dealer][b] > 21) {
+                b = 1;
+              }
+            }
+            if (handTotal[dealer][b] > 21) {
+              delay(4000);
+              lcd.clear();
+              lcd.setCursor(0, 0);
+              lcd.print("Dealer Busts");
+              lcd.setCursor(0, 1);
+              lcd.print("You win");
+              cardBalence += currentBet;
+            }
+            else if (handTotal[dealer][b] == handTotal[player][a]) {
+              delay(4000);
+              lcd.clear();
+              lcd.print("You Push");
+            }
+            else {
+              if (handTotal[dealer][b] > handTotal[player][a]) {
+                delay(4000);
+                lcd.clear();
+                lcd.print("Dealer Wins");
+                cardBalence -= currentBet;
+              }
+              else {
+                delay(4000);
+                lcd.clear();
+                lcd.print("You Win");
+                cardBalence += currentBet;                   
+              }
+            }
+          }
         }
-      } while (cards_dealt < 8 && handTotal[player][a] < 21 && choice != stand);
-      //for the cards dealt you have to account for the 2 cards in the dealers hand
+      }
+    }
+    if (cardBalence <= 0) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Tapped Out");
+      lcd.setCursor(0, 1);
+      lcd.print("Balence = 0");      
     }
   }
 }
