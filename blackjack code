@@ -1,0 +1,349 @@
+#include <LiquidCrystal.h>
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+#include "SevSeg.h"
+SevSeg sevseg; 
+
+int deck[52];
+int suits[52];
+int values[52];
+
+void setupDeck () { 
+  int y = 1;
+  for (int x = 0; x < 52; x++) {
+    deck[x] = y;
+    y++;
+  }
+  for (int i = 1; i < 52; i++) {
+    int j = random(0, 52);
+    int t = deck[i];
+    deck[i] = deck[j];
+    deck[j] = t;
+  }
+  y = 1;
+  for (int x = 0; x < 13; x++) {
+    values[x] = y;
+    y++;
+    suits[x] = 1;
+  };
+  y = 1;
+  for (int x = 13; x < 26; x++) {
+    values[x] = y;
+    y++;
+    suits[x] = 2;
+  };
+  y = 1;
+  for (int x = 26; x < 39; x++) {
+    values[x] = y;
+    y++;
+    suits[x] = 3;
+  };
+  y = 1;
+  for (int x = 39; x < 52; x++) {
+    values[x] = y;
+    y++;
+    suits[x] = 4;
+  };
+}
+
+int handSuits[2][6];
+int handRanks[2][6];
+int player = 0;
+int dealer = 1;
+int cards_dealt = 0;
+
+void dealCard(int person) {
+  int val = deck[cards_dealt];
+  handSuits[person][cards_dealt] = suits[val];
+  handRanks[person][cards_dealt] = values[val];
+  cards_dealt ++;
+}
+
+int handTotal[2][2]; 
+
+void handValue(int person) {
+  for (int i = 0; i < 6; i++) {
+    if (handRanks[person][i] == 11) {
+      handTotal[person][0] += 10;
+      handTotal[person][1] += 10;
+    }
+    else if (handRanks[person][i] == 12) {
+      handTotal[person][0] += 10;
+      handTotal[person][1] += 10;
+    }
+    else if (handRanks[person][i] == 13) {
+      handTotal[person][0] += 10;
+      handTotal[person][1] += 10;
+    }
+    else if (handRanks[person][i] == 1) {
+      handTotal[person][0] += 11;
+      handTotal[person][1] += 1;
+    }
+    else {
+      handTotal[person][0] += handRanks[person][i];
+      handTotal[person][1] += handRanks[person][i];
+    }
+  }
+}
+
+byte heart[] = {
+  B01010,
+  B11111,
+  B11111,
+  B01110,
+  B00100,
+  B00000,
+  B00000,
+  B00000
+};
+
+byte diamond[] = {
+  B00100,
+  B01110,
+  B11111,
+  B11111,
+  B01110,
+  B00100,
+  B00000,
+  B00000
+};
+
+byte spade[] = {
+  B00100,
+  B01110,
+  B11111,
+  B11111,
+  B00100,
+  B01110,
+  B00000,
+  B00000
+};
+
+byte club[] = {
+  B01110,
+  B01110,
+  B11111,
+  B11111,
+  B00100,
+  B01110,
+  B00000,
+  B00000
+};
+
+byte ten[] = {
+  B01000,
+  B11000,
+  B01000,
+  B11100,
+  B00010,
+  B00101,
+  B00101,
+  B00010
+};
+
+byte numBack[] = { //this is a B
+  B11111,
+  B10001,
+  B10110,
+  B10001,
+  B10110,
+  B10001,
+  B11111,
+  B11111
+};
+
+byte suitBack[] = { //this is a J
+  B11111,
+  B11000,
+  B11101,
+  B11101,
+  B10101,
+  B11011,
+  B11111,
+  B11111
+};
+
+const int button = 8;
+const int xPin = A1;
+const int yPin = A2;
+
+int gamesPlayed;
+int cardBalence;
+int minBet = 5;
+bool displayDeal = false;
+int choice;
+int hit = 0;
+int stand = 1;
+
+void displayHands() {
+  lcd.setCursor(0, 0);
+  lcd.print("D:");
+  display(dealer);
+  lcd.setCursor(0, 1);
+  lcd.print("P:");
+  display(player);
+}
+
+void display(int person) {
+  for (int i = 0; i < 6; i++) {
+    if (person == dealer && i == 0 && displayDeal == false) {
+      lcd.write((uint8_t)4);
+      lcd.write((uint8_t)5);
+    }
+    else {
+      switch (handRanks[person][i]) {
+        case 1:
+          lcd.print("A");
+          break;
+        case 10:
+          lcd.write((uint8_t)6);
+          break;
+        case 11:
+          lcd.print("J");
+          break;  
+        case 12:
+          lcd.print("Q");
+          break;
+        case 13:
+          lcd.print("K");
+          break;
+        default:
+          lcd.print(handRanks[person][i]);
+        }
+      switch (handSuits[person][i]) {
+        case 1:
+          lcd.write((uint8_t)0);
+          break;
+        case 2:
+          lcd.write((uint8_t)1);
+          break;
+        case 3:
+          lcd.write((uint8_t)2);
+          break; 
+        case 4:
+          lcd.write((uint8_t)3);
+          break;       
+      }
+    }
+  }
+}
+
+void displayDealer() {
+  displayDeal = true;
+}
+
+void setup() {
+  lcd.begin(16,2);
+  lcd.createChar(0, heart);
+  lcd.createChar(1, diamond);
+  lcd.createChar(2, spade);
+  lcd.createChar(3, club); 
+  lcd.createChar(4, numBack);  
+  lcd.createChar(5, suitBack);
+  lcd.createChar(6, ten);
+  lcd.clear();
+  randomSeed(analogRead(A0));  
+  byte numDigits = 1;
+  byte digitPins[] = {};
+  byte segmentPins[] = {6, 5, 2, 3, 4, 7, 8, 9};
+  bool resistorsOnSegments = true;
+  byte hardwareConfig = COMMON_CATHODE; 
+  sevseg.begin(hardwareConfig, numDigits, digitPins, segmentPins, resistorsOnSegments);
+  sevseg.setBrightness(90);
+  pinMode(button, INPUT);
+  digitalWrite(button, HIGH);
+  Serial.begin(9600);
+  gamesPlayed = 0;
+}
+
+void loop() { //maybe have the welcome to blackjack section be a waiting screen until the player clicks the joystick button  
+  lcd.setCursor(0,0);
+  lcd.print("   Welcome to"); //spacing to center it
+  lcd.setCursor(0,1);
+  lcd.print("   Blackjack"); 
+  if (digitalRead(button) == 0) {
+    if (gamesPlayed == 0) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Please Scan Card");
+      cardBalence = 100; //placeholder for RFID      
+    }
+    sevseg.setNumber(cardBalence);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Place your Bet");
+    lcd.setCursor(0, 1);
+    lcd.print("bet: $");
+    int currentBet = 5;
+    while (digitalRead(button)!= 0) {
+      lcd.setCursor(6, 1);
+      if (analogRead(yPin) > 520; currentBet <= (cardBalence - 5)) {
+        currentBet += 5;
+        lcd.print(currentBet);
+      }
+      else if (analogRead(yPin) < 480; currentBet >= 10) {
+        currentBet -= 5;
+        lcd.print(currentBet);
+      }
+    }
+    //reset hands
+    handTotal[dealer][0] = 0;
+    handTotal[dealer][1] = 0;
+    handTotal[player][0] = 0;
+    handTotal[player][1] = 0;
+    cards_dealt = 0;
+    displayDeal = false;
+    setupDeck();
+    int a = 0; //switchs to case where ace is 1 for player
+    int b = 0; //switchs to case where ace is 1 for dealer
+    dealCard(dealer);
+    dealCard(player);
+    dealCard(dealer);
+    dealCard(player);
+    displayHands();
+    if (handTotal[player][a] > 21) {
+      a = 1;
+    }
+    if (handTotal[dealer][b] > 21) {
+      b = 1;
+    }
+    if (handTotal[player][a] == 21) {  //player natural blackjack
+      if (handTotal[dealer][b] == 21) {
+        lcd.print("You Push");
+      }
+      else {
+        lcd.print("Player Blackjack");
+        cardBalence += currentBet;
+      }
+    }
+    else { //need to add some sort of loop here to allow player to choose to hit multiple times
+      do {
+        lcd.setCursor(15, 0);
+        lcd.print("H");
+        lcd.setCursor(15, 1);
+        lcd.print("S");
+        while (digitalRead(button) != 0) {
+          if (analogRead(yPin) > 520) {
+            lcd.setCursor(14, 0);
+            lcd.blink();
+            if (digitalRead(button) == 0) { //this might not work as it might cancel the while loop before running the choice
+              choice = hit;
+            }
+          }
+          else if (analogRead(yPin) < 480) {
+            lcd.setCursor(14, 1);
+            lcd.blink();
+            if (digitalRead(button) == 0) { //this might not work as it might cancel the while loop before running the choice
+              choice = stand;
+            }
+          }        
+        }
+        if (choice = hit) {
+          dealCard(player);
+          displayHands();
+          if (handTotal[])
+        }
+      } while (cards_dealt < 8 && handTotal[player][a] < 21 && choice != stand);
+      //for the cards dealt you have to account for the 2 cards in the dealers hand
+    }
+  }
+}
