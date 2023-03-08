@@ -233,6 +233,9 @@ void displayDealer() {
   displayDeal = true;
 }
 
+int move;
+int hover;
+
 void setup() {
   lcd.begin(16,2);
   lcd.createChar(0, heart);
@@ -320,29 +323,35 @@ void loop() { //maybe have the welcome to blackjack section be a waiting screen 
         else {
           lcd.print("Player Blackjack");
           cardBalence += currentBet;
+          sevseg.refreshDisplay();
         }
       }
-      else { //need to add some sort of loop here to allow player to choose to hit multiple times
+      else {
         do {
           lcd.setCursor(15, 0);
           lcd.print("H");
           lcd.setCursor(15, 1);
           lcd.print("S");
-          while (digitalRead(button) != 0) {
+          move = 0;
+          while (digitalRead(button) != 0  && move == 0) {
             if (analogRead(yPin) > 520) {
               lcd.setCursor(14, 0);
               lcd.blink();
-              if (digitalRead(button) == 0) { //this might not work as it might cancel the while loop before running the choice
-                choice = hit;
-              }
+              hover = hit;             
             }
             else if (analogRead(yPin) < 480) {
               lcd.setCursor(14, 1);
               lcd.blink();
-              if (digitalRead(button) == 0) { //this might not work as it might cancel the while loop before running the choice
-                choice = stand;
-              }
-            }        
+              hover = stand;
+            }
+            else if (digitalRead(button) == 0 && hover == hit) {
+              choice = hit;
+              move = 1;
+            }
+            else if (digitalRead(button) == 0 && hover == stand) {
+              choice = stand;
+              move = 1;
+            }     
           }
           if (choice = hit) {
             dealCard(player);
@@ -360,6 +369,7 @@ void loop() { //maybe have the welcome to blackjack section be a waiting screen 
           lcd.setCursor(0, 0);
           lcd.print("You Bust");
           cardBalence -= currentBet;
+          sevseg.refreshDisplay();      
         }
         else {
           displayDeal = true;
@@ -372,6 +382,7 @@ void loop() { //maybe have the welcome to blackjack section be a waiting screen 
             lcd.setCursor(0, 1);
             lcd.print("You lose");
             cardBalence -= currentBet;
+            sevseg.refreshDisplay();
           }
           else {
             while (dealerCard < 6 && handTotal[dealer][b] < 17) {
@@ -390,6 +401,7 @@ void loop() { //maybe have the welcome to blackjack section be a waiting screen 
               lcd.setCursor(0, 1);
               lcd.print("You win");
               cardBalence += currentBet;
+              sevseg.refreshDisplay();
             }
             else if (handTotal[dealer][b] == handTotal[player][a]) {
               delay(4000);
@@ -402,12 +414,14 @@ void loop() { //maybe have the welcome to blackjack section be a waiting screen 
                 lcd.clear();
                 lcd.print("Dealer Wins");
                 cardBalence -= currentBet;
+                sevseg.refreshDisplay();
               }
               else {
                 delay(4000);
                 lcd.clear();
                 lcd.print("You Win");
-                cardBalence += currentBet;                   
+                sevseg.refreshDisplay();
+                cardBalence += currentBet;              
               }
             }
           }
