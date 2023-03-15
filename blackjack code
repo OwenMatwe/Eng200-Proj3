@@ -265,15 +265,14 @@ void setup() {
   lcd.createChar(6, ten);
   lcd.clear();
   randomSeed(analogRead(A7));
-  byte numDigits = 4;  //issue here
-  byte digitPins[] = { 27 };
-  byte segmentPins[] = { 31, 33, 35 };
+  byte numDigits = 4;
+  byte digitPins[] = {30, 31, 32, 33};
+  byte segmentPins[] = {29, 22, 23, 25, 26, 28, 27, 24};
 
-  bool resistorsOnSegments = true;
-  bool updateWithDelaysIn = true;
-  byte hardwareConfig = COMMON_CATHODE;
+  bool resistorsOnSegments = true; 
+  byte hardwareConfig = COMMON_CATHODE; 
   sevseg.begin(hardwareConfig, numDigits, digitPins, segmentPins, resistorsOnSegments);
-  sevseg.setBrightness(100);
+  sevseg.setBrightness(90);
 
   pinMode(button, INPUT);
   digitalWrite(button, HIGH);
@@ -294,7 +293,12 @@ void loop() {
       cardBalence = 100;  //placeholder for RFID
     }
     while (cardBalence > 0) {
-      //sevseg.setNumber(cardBalence);
+      lcd.clear();
+      for (int i = 0; i < 12; i++) {
+        sevseg.setNumber(cardBalence);
+        sevseg.refreshDisplay();
+        delay(750);
+      }
       gamesPlayed += 1;
       lcd.clear();
       lcd.setCursor(0, 0);
@@ -308,7 +312,7 @@ void loop() {
         if (analogRead(yPin) > 520 && currentBet <= (cardBalence - minBet)) {
           currentBet = currentBet + change;
           lcd.print(currentBet);
-          delay(2000);
+          delay(500);
         } else if (analogRead(yPin) < 480 && currentBet >= (minBet + minBet)) {
           currentBet = currentBet - change;
           if (currentBet == 5) {
@@ -317,7 +321,7 @@ void loop() {
           } else {
             lcd.print(currentBet);
           }
-          delay(2000);
+          delay(500);
         }
       }
       lcd.clear();
@@ -340,7 +344,7 @@ void loop() {
       if (handTotal[dealer][b] > 21) {
         b = 1;
       }
-      if (handTotal[player][a] == 21) {  //player natural blackjack
+      if (handTotal[player][a] == 21) {  //player natural blackjack make changes so that you can still see your cards beforehand
         displayDeal = true;
         displayHands();
         if (handTotal[dealer][b] == 21) {
@@ -353,11 +357,11 @@ void loop() {
           lcd.setCursor(0, 0);
           lcd.print("Player Blackjack");
           cardBalence += currentBet;
-          //sevseg.refreshDisplay();
+          //          
           delay(7000);
         }
       } else {
-        while (playerCard < 6 && handTotal[player][a] < 21 && choice != stand) {  //issues with summing the handTotal
+        while (playerCard < 6 && handTotal[player][a] < 21 && choice != stand) {
           handValue(player);
           lcd.clear();
           displayHands();
@@ -411,7 +415,7 @@ void loop() {
           lcd.setCursor(0, 1);
           lcd.print("You Bust");
           cardBalence -= currentBet;
-          //sevseg.refreshDisplay();
+          //
           delay(7000);
         } else {
           displayDeal = true;
@@ -423,7 +427,7 @@ void loop() {
             lcd.setCursor(0, 1);
             lcd.print("You lose");
             cardBalence -= currentBet;
-            //sevseg.refreshDisplay();
+            //
             delay(7000);
           } else {
             while (dealerCard < 6 && handTotal[dealer][b] < 17) {
@@ -443,7 +447,7 @@ void loop() {
               lcd.setCursor(0, 1);
               lcd.print("You win");
               cardBalence += currentBet;
-              //sevseg.refreshDisplay();
+              //
               delay(7000);
             } else if (handTotal[dealer][b] == handTotal[player][a]) {
               lcd.clear();
@@ -458,7 +462,7 @@ void loop() {
                 lcd.print(" to ");
                 lcd.print(handTotal[player][a]);
                 cardBalence -= currentBet;
-                //sevseg.refreshDisplay();
+                //
                 delay(7000);
               } else {
                 lcd.clear();
@@ -468,7 +472,7 @@ void loop() {
                 lcd.print(" to ");
                 lcd.print(handTotal[dealer][b]);
                 cardBalence += currentBet;
-                //sevseg.refreshDisplay();
+                //
                 delay(7000);
               }
             }
@@ -482,7 +486,8 @@ void loop() {
         lcd.print("Tapped Out");
         lcd.setCursor(0, 1);
         lcd.print("Balence = 0");
-      gamesPlayed = 0;
+        delay(4000);
+        gamesPlayed = 0;
     }
   }
 }
