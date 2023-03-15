@@ -348,17 +348,20 @@ void loop() {
         displayDeal = true;
         displayHands();
         if (handTotal[dealer][b] == 21) {
-          lcd.clear();
-          lcd.setCursor(0, 0);
-          lcd.print("You Push");
-          delay(7000);
+          while (digitalRead(button) != 0) {
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print("You Push");
+            delay(500);
+          }          
         } else {
-          lcd.clear();
-          lcd.setCursor(0, 0);
-          lcd.print("Player Blackjack");
+          while (digitalRead(button) != 0) {
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print("Player Blackjack");
+            delay(500);
+          }
           cardBalence += currentBet;
-          //          
-          delay(7000);
         }
       } else {
         while (playerCard < 6 && handTotal[player][a] < 21 && choice != stand) {
@@ -401,34 +404,37 @@ void loop() {
             if (handTotal[player][a] > 21) {
               a = 1;
             }
-            delay(3000);
+            lcd.noBlink();            
+            delay(2000);
           }
           lcd.noBlink();
           lcd.clear();
           lcd.print(handTotal[player][a]);
         }
         if (handTotal[player][a] > 21) {
-          lcd.clear();
-          lcd.setCursor(0, 0);
-          lcd.print(handTotal[player][a]);
-          lcd.print(" total");
-          lcd.setCursor(0, 1);
-          lcd.print("You Bust");
+          while (digitalRead(button) != 0) {
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print(handTotal[player][a]);
+            lcd.print(" total");
+            lcd.setCursor(0, 1);
+            lcd.print("You Bust");
+            delay(500);
+          }                   
           cardBalence -= currentBet;
-          //
-          delay(7000);
         } else {
           displayDeal = true;
           displayHands();
           if (handTotal[dealer][b] == 21) {
-            lcd.clear();
-            lcd.setCursor(0, 0);
-            lcd.print("Dealer Blackjack");
-            lcd.setCursor(0, 1);
-            lcd.print("You lose");
+            while (digitalRead(button) != 0) {
+              lcd.clear();
+              lcd.setCursor(0, 0);
+              lcd.print("Dealer Blackjack");
+              lcd.setCursor(0, 1);
+              lcd.print("You lose");
+              delay(500);
+            }
             cardBalence -= currentBet;
-            //
-            delay(7000);
           } else {
             while (dealerCard < 6 && handTotal[dealer][b] < 17) {
               dealCard(dealer);
@@ -438,42 +444,47 @@ void loop() {
               if (handTotal[dealer][b] > 21) {
                 b = 1;
               }
-              delay(4000);
+              delay(3000);
             }
             if (handTotal[dealer][b] > 21) {
-              lcd.clear();
-              lcd.setCursor(0, 0);
-              lcd.print("Dealer Busts");
-              lcd.setCursor(0, 1);
-              lcd.print("You win");
+              while (digitalRead(button) != 0) {
+                lcd.clear();
+                lcd.setCursor(0, 0);
+                lcd.print("Dealer Busts");
+                lcd.setCursor(0, 1);
+                lcd.print("You win");
+                delay(500);
+              }
               cardBalence += currentBet;
-              //
-              delay(7000);
             } else if (handTotal[dealer][b] == handTotal[player][a]) {
-              lcd.clear();
-              lcd.print("You Push");
-              delay(7000);
+              while (digitalRead(button) != 0) {
+                lcd.clear();
+                lcd.print("You Push");
+                delay(500);
+              }
             } else {
               if (handTotal[dealer][b] > handTotal[player][a]) {
-                lcd.clear();
-                lcd.print("Dealer Wins");
-                lcd.setCursor(0, 1);
-                lcd.print(handTotal[dealer][b]);
-                lcd.print(" to ");
-                lcd.print(handTotal[player][a]);
+                while (digitalRead(button) != 0) {
+                  lcd.clear();
+                  lcd.print("Dealer Wins");
+                  lcd.setCursor(0, 1);
+                  lcd.print(handTotal[dealer][b]);
+                  lcd.print(" to ");
+                  lcd.print(handTotal[player][a]);
+                  delay(500);
+                }
                 cardBalence -= currentBet;
-                //
-                delay(7000);
               } else {
-                lcd.clear();
-                lcd.print("You Win");
-                lcd.setCursor(0, 1);
-                lcd.print(handTotal[player][a]);
-                lcd.print(" to ");
-                lcd.print(handTotal[dealer][b]);
+                while (digitalRead(button) != 0) {
+                  lcd.clear();
+                  lcd.print("You Win");
+                  lcd.setCursor(0, 1);
+                  lcd.print(handTotal[player][a]);
+                  lcd.print(" to ");
+                  lcd.print(handTotal[dealer][b]);
+                  delay(500);
+                }
                 cardBalence += currentBet;
-                //
-                delay(7000);
               }
             }
           }
@@ -481,12 +492,14 @@ void loop() {
       }
     }
     if (cardBalence <= 0) {
+      while (digitalRead(button) != 0) {   
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("Tapped Out");
         lcd.setCursor(0, 1);
         lcd.print("Balence = 0");
-        delay(4000);
+        delay(500);
+      }
         gamesPlayed = 0;
     }
   }
