@@ -1,3 +1,5 @@
+#include <SevSeg.h>
+
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(11, 12, 7, 8, 9, 10);
 #include "SevSeg.h"
@@ -7,8 +9,8 @@ SevSeg sevseg;
 #include <EEPROM.h>
 
 
-#define SS_PIN 49  /* Slave Select Pin */
-#define RST_PIN 48  /* Reset Pin */
+#define SS_PIN 4  /* Slave Select Pin */
+#define RST_PIN 5  /* Reset Pin */
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
 
 
@@ -18,6 +20,8 @@ int suits[52];
 int values[52];
 
 void setupDeck() {
+  Serial.println("setupDeck called");
+  
   int y = 1;
   for (int x = 0; x < 52; x++) {
     deck[x] = y;
@@ -63,6 +67,8 @@ int cards_dealt = 0;
 int cards[2];
 
 void dealCard(int person) {
+  Serial.println("dealCard called");
+
   int val = deck[cards_dealt];
   handSuits[person][cards[person]] = suits[val];
   handRanks[person][cards[person]] = values[val];
@@ -73,6 +79,8 @@ void dealCard(int person) {
 int handTotal[2][2];
 
 void handValue(int person) {
+  Serial.println("handValue called");
+
   handTotal[person][0] = 0;
   handTotal[person][1] = 0;
   for (int i = 0; i < 6; i++) {
@@ -187,29 +195,27 @@ int dealerCard;
 int eepromAdress;
 
 void rfidRead(){
+  Serial.println("rfidRead called");
   // Look for new cards
-  if ( ! mfrc522.PICC_IsNewCardPresent()) 
-  {
+  if ( ! mfrc522.PICC_IsNewCardPresent()) {
     return;
   }
   // Select one of the cards
-  if ( ! mfrc522.PICC_ReadCardSerial()) 
-  {
+  if ( ! mfrc522.PICC_ReadCardSerial()) {
     return;
   }
   //Show UID on serial monitor
-  Serial.print("UID tag :");
+  Serial.println("UID tag :");
   String content= "";
   byte letter;
-  for (byte i = 0; i < mfrc522.uid.size; i++) 
-  {
-     Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
-     Serial.print(mfrc522.uid.uidByte[i], HEX);
+  for (byte i = 0; i < mfrc522.uid.size; i++) {
+     Serial.println(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
+     Serial.println(mfrc522.uid.uidByte[i], HEX);
      content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
      content.concat(String(mfrc522.uid.uidByte[i], HEX));
   }
   Serial.println();
-  Serial.print("Message : ");
+  Serial.println("Message : ");
   content.toUpperCase();
   if (content.substring(1) == "09 BC CE B2") //change here the UID of the card/cards that you want to give access
   {
@@ -235,9 +241,12 @@ void rfidRead(){
     Serial.println(" Access denied");
     delay(3000);
   }
+  Serial.println("rfidRead finished");
 } 
 
 void displayHands() {
+  Serial.println("displayHands called");
+
   lcd.setCursor(0, 0);
   lcd.print("D:");
   display(dealer);
@@ -293,6 +302,8 @@ void display(int person) {
 }
 
 void reset() {
+  Serial.println("reset called");
+
   handTotal[dealer][0] = 0;
   handTotal[dealer][1] = 0;
   handTotal[player][0] = 0;
@@ -317,6 +328,8 @@ int minBet = 1;
 int change = 1;
 
 void setup() {
+  Serial.println("setup called");
+
   lcd.begin(16, 2);
   lcd.createChar(0, heart);
   lcd.createChar(1, diamond);
@@ -361,7 +374,7 @@ void loop() {
       delay(2000);
       rfidRead();
     }
-    while (cardBalence > 0) {
+    while (true) {
       lcd.clear();
       for (int i = 0; i < 12; i++) {
         sevseg.setNumber(cardBalence);
@@ -379,7 +392,7 @@ void loop() {
       lcd.print(currentBet);
       while (digitalRead(button) != 0) {
         lcd.setCursor(6, 1);
-        if (analogRead(yPin) > 520 && currentBet <= (cardBalence - minBet)) {
+        if (analogRead(yPin) > 520) {
           currentBet = currentBet + change;
           lcd.print(currentBet);
           delay(500);
