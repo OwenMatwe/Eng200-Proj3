@@ -384,11 +384,12 @@ void loop() {
       lcd.print("Place your Bet");
       lcd.setCursor(0, 1);
       lcd.print("bet: $");
-      if (currentBet >= 5){
+     if (cardBalence >= 5){ //Makes sure that you only get the 5 auto bet if you have 5 monies
         currentBet = 5;
       }
-      else;
+      else {
       currentBet = cardBalence;
+      }
       lcd.print(currentBet);
       while (digitalRead(button) != 0) {
         lcd.setCursor(6, 1);
