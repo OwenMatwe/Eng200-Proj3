@@ -1,5 +1,3 @@
-#include <SevSeg.h>
-
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(11, 12, 7, 8, 9, 10);
 #include "SevSeg.h"
@@ -7,21 +5,24 @@ SevSeg sevseg;
 #include <SPI.h>
 #include <MFRC522.h>
 #include <EEPROM.h>
+#include <avr/wdt.h>
 
 
-#define SS_PIN 4  /* Slave Select Pin */
+#define SS_PIN 4
 #define RST_PIN 5  /* Reset Pin */
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
 
-
+void reboot() {
+  wdt_disable();
+  wdt_enable(WDTO_15MS);
+  while (1) {}
+}
 
 int deck[52];
 int suits[52];
 int values[52];
 
 void setupDeck() {
-  Serial.println("setupDeck called");
-  
   int y = 1;
   for (int x = 0; x < 52; x++) {
     deck[x] = y;
@@ -67,8 +68,6 @@ int cards_dealt = 0;
 int cards[2];
 
 void dealCard(int person) {
-  Serial.println("dealCard called");
-
   int val = deck[cards_dealt];
   handSuits[person][cards[person]] = suits[val];
   handRanks[person][cards[person]] = values[val];
@@ -79,8 +78,6 @@ void dealCard(int person) {
 int handTotal[2][2];
 
 void handValue(int person) {
-  Serial.println("handValue called");
-
   handTotal[person][0] = 0;
   handTotal[person][1] = 0;
   for (int i = 0; i < 6; i++) {
@@ -183,7 +180,8 @@ byte suitBack[] = {  //this is a J
 const int button = 34;
 const int xPin = A1;
 const int yPin = A0;
-
+int Quit = 1;
+int Play = 0;
 int gamesPlayed = 0;
 int cardBalence;
 bool displayDeal = false;
@@ -193,29 +191,32 @@ int stand = 1;
 int playerCard;
 int dealerCard;
 int eepromAdress;
+int readCardYet = 0;
 
 void rfidRead(){
-  Serial.println("rfidRead called");
   // Look for new cards
-  if ( ! mfrc522.PICC_IsNewCardPresent()) {
+  if ( ! mfrc522.PICC_IsNewCardPresent()) 
+  {
     return;
   }
   // Select one of the cards
-  if ( ! mfrc522.PICC_ReadCardSerial()) {
+  if ( ! mfrc522.PICC_ReadCardSerial()) 
+  {
     return;
   }
   //Show UID on serial monitor
-  Serial.println("UID tag :");
+  Serial.print("UID tag :");
   String content= "";
   byte letter;
-  for (byte i = 0; i < mfrc522.uid.size; i++) {
-     Serial.println(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
-     Serial.println(mfrc522.uid.uidByte[i], HEX);
+  for (byte i = 0; i < mfrc522.uid.size; i++) 
+  {
+     Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
+     Serial.print(mfrc522.uid.uidByte[i], HEX);
      content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
      content.concat(String(mfrc522.uid.uidByte[i], HEX));
   }
   Serial.println();
-  Serial.println("Message : ");
+  Serial.print("Message : ");
   content.toUpperCase();
   if (content.substring(1) == "09 BC CE B2") //change here the UID of the card/cards that you want to give access
   {
@@ -223,6 +224,7 @@ void rfidRead(){
     Serial.println();
     cardBalence = EEPROM.read(1);
     eepromAdress = 1;
+    readCardYet = 1;
     delay(3000);
 
   }
@@ -231,8 +233,10 @@ void rfidRead(){
     Serial.println("Authorized access");
     Serial.println();
     cardBalence = EEPROM.read(2);
-    delay(3000);
+    readCardYet = 1;
     eepromAdress = 2;
+    delay(3000);
+    
 
 
   }
@@ -241,12 +245,9 @@ void rfidRead(){
     Serial.println(" Access denied");
     delay(3000);
   }
-  Serial.println("rfidRead finished");
 } 
 
 void displayHands() {
-  Serial.println("displayHands called");
-
   lcd.setCursor(0, 0);
   lcd.print("D:");
   display(dealer);
@@ -302,8 +303,6 @@ void display(int person) {
 }
 
 void reset() {
-  Serial.println("reset called");
-
   handTotal[dealer][0] = 0;
   handTotal[dealer][1] = 0;
   handTotal[player][0] = 0;
@@ -328,8 +327,6 @@ int minBet = 1;
 int change = 1;
 
 void setup() {
-  Serial.println("setup called");
-
   lcd.begin(16, 2);
   lcd.createChar(0, heart);
   lcd.createChar(1, diamond);
@@ -343,8 +340,6 @@ void setup() {
   byte numDigits = 4;
   byte digitPins[] = {30, 31, 32, 33};
   byte segmentPins[] = {29, 22, 23, 25, 26, 28, 27, 24};
-  
-
   Serial.begin(9600);   // Initiate a serial communication
   SPI.begin();      // Initiate  SPI bus
   mfrc522.PCD_Init();   // Initiate MFRC522
@@ -368,13 +363,15 @@ void loop() {
   lcd.print("   Blackjack!");
   if (digitalRead(button) == 0) {
     if (gamesPlayed == 0) {
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Please Scan Card");
-      delay(2000);
-      rfidRead();
+      while (readCardYet == 0) {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Please Scan Card");
+        delay(100);
+        rfidRead();
+      }
     }
-    while (true) {
+    while (cardBalence > 0) {
       lcd.clear();
       for (int i = 0; i < 12; i++) {
         sevseg.setNumber(cardBalence);
@@ -382,17 +379,20 @@ void loop() {
         delay(750);
       }
       gamesPlayed += 1;
-      EEPROM.write(eepromAdress, cardBalence);
       lcd.clear();
       lcd.setCursor(0, 0);
       lcd.print("Place your Bet");
       lcd.setCursor(0, 1);
       lcd.print("bet: $");
-      currentBet = 5;
+      if (currentBet >= 5){
+        currentBet = 5;
+      }
+      else;
+      currentBet = cardBalence;
       lcd.print(currentBet);
       while (digitalRead(button) != 0) {
         lcd.setCursor(6, 1);
-        if (analogRead(yPin) > 520) {
+        if (analogRead(yPin) > 520 && currentBet <= (cardBalence - minBet)) {
           currentBet = currentBet + change;
           lcd.print(currentBet);
           delay(500);
@@ -451,20 +451,20 @@ void loop() {
           handValue(player);
           lcd.clear();
           displayHands();
-          lcd.setCursor(15, 0);
-          lcd.print("H");
-          lcd.setCursor(15, 1);
-          lcd.print("S");
+          lcd.setCursor(13, 0);
+          lcd.print("Hit");
+          lcd.setCursor(12, 1);
+          lcd.print("Stay");
           move = 0;
           choice = 3;
           delay(1000);
           while (move == 0) {
             if (analogRead(yPin) > 520) {
-              lcd.setCursor(14, 0);
+              lcd.setCursor(12, 0);
               lcd.blink();
               hover = hit;
             } else if (analogRead(yPin) < 480) {
-              lcd.setCursor(14, 1);
+              lcd.setCursor(11, 1);
               lcd.blink();
               hover = stand;
             }
@@ -568,21 +568,74 @@ void loop() {
                   delay(500);
                 }
                 cardBalence += currentBet;
-                EEPROM.write(eepromAdress, cardBalence);
               }
             }
           }
         }
       }
+      //Asks The player if they want to try another game
+      EEPROM.write(eepromAdress, cardBalence);
+      lcd.clear();
+          lcd.setCursor(0, 0);
+          lcd.print("Continue?");
+          lcd.setCursor(12, 0);
+          lcd.print("Quit");
+          lcd.setCursor(12, 1);
+          lcd.print("Play");
+          move = 0;
+          choice = 3;
+          delay(1000);
+          while (move == 0) {
+            if (analogRead(yPin) > 520) {
+              lcd.setCursor(11, 0);
+              lcd.blink();
+              hover = Quit;
+            } else if (analogRead(yPin) < 480) {
+              lcd.setCursor(11, 1);
+              lcd.blink();
+              hover = Play;
+            }
+            if (digitalRead(button) == 0 && hover == Quit) {
+              choice = Quit;
+              move = 1;
+              delay(1000);
+            } else if (digitalRead(button) == 0 && hover == Play) {
+              choice = Play;
+              move = 1;
+              delay(1000);
+            }
+          }
+          if (choice == Quit) {
+            lcd.noBlink();
+            readCardYet = 0;
+            lcd.clear();
+            lcd.setCursor(0,0);
+            lcd.print("Scan Card to");
+            lcd.setCursor(0,1);
+            lcd.print("Store Balance");
+            while (readCardYet == 0) {
+              rfidRead();
+              }
+            lcd.clear();
+            lcd.setCursor(0,0);
+            lcd.print("Card Scanned");
+            lcd.setCursor(0,1);
+            lcd.print("Come Again Soon");
+            delay(500);
+            reboot();
+          }
+          lcd.noBlink();
+          lcd.clear();
     }
     if (cardBalence <= 0) {
       while (digitalRead(button) != 0) {   
         lcd.clear();
         lcd.setCursor(0, 0);
-        lcd.print("Tapped Out");
-        lcd.setCursor(0, 1);
         lcd.print("Balence = 0");
+        lcd.setCursor(0, 1);
+        lcd.print("Scan Card Again?");
         delay(500);
+        rfidRead();
       }
         gamesPlayed = 0;
     }
