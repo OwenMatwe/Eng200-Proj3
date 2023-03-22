@@ -225,7 +225,7 @@ void rfidRead(){
     cardBalence = EEPROM.read(1);
     eepromAdress = 1;
     readCardYet = 1;
-    delay(3000);
+    delay(750);
 
   }
   else if (content.substring(1) == "E3 43 56 33") //change here the UID of the card/cards that you want to give access
@@ -235,7 +235,7 @@ void rfidRead(){
     cardBalence = EEPROM.read(2);
     readCardYet = 1;
     eepromAdress = 2;
-    delay(3000);
+    delay(750);
     
 
 
@@ -367,13 +367,14 @@ void loop() {
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("Please Scan Card");
-        delay(100);
         rfidRead();
       }
     }
     while (cardBalence > 0) {
       lcd.clear();
-      for (int i = 0; i < 12; i++) {
+      lcd.setCursor(0,0);
+      lcd.print("Your Balance is");
+      for (int i = 0; i < 4; i++) {
         sevseg.setNumber(cardBalence);
         sevseg.refreshDisplay();
         delay(750);
@@ -384,13 +385,14 @@ void loop() {
       lcd.print("Place your Bet");
       lcd.setCursor(0, 1);
       lcd.print("bet: $");
-     if (cardBalence >= 5){ //Makes sure that you only get the 5 auto bet if you have 5 monies
+      if (cardBalence >= 5){
         currentBet = 5;
       }
       else {
       currentBet = cardBalence;
       }
       lcd.print(currentBet);
+      //Here
       while (digitalRead(button) != 0) {
         lcd.setCursor(6, 1);
         if (analogRead(yPin) > 520 && currentBet <= (cardBalence - minBet)) {
@@ -432,19 +434,17 @@ void loop() {
         displayDeal = true;
         displayHands();
         if (handTotal[dealer][b] == 21) {
-          while (digitalRead(button) != 0) {
-            lcd.clear();
-            lcd.setCursor(0, 0);
-            lcd.print("You Push");
-            delay(500);
-          }          
+          lcd.clear();
+          lcd.setCursor(0, 0);
+          lcd.print("You Push");
+          delay(2000);
+                 
         } else {
-          while (digitalRead(button) != 0) {
-            lcd.clear();
-            lcd.setCursor(0, 0);
-            lcd.print("Player Blackjack");
-            delay(500);
-          }
+          lcd.clear();
+          lcd.setCursor(0, 0);
+          lcd.print("Player Blackjack");
+          delay(2000);
+          
           cardBalence += currentBet;
         }
       } else {
@@ -496,28 +496,27 @@ void loop() {
           lcd.print(handTotal[player][a]);
         }
         if (handTotal[player][a] > 21) {
-          while (digitalRead(button) != 0) {
-            lcd.clear();
+          lcd.clear();
             lcd.setCursor(0, 0);
             lcd.print(handTotal[player][a]);
             lcd.print(" total");
             lcd.setCursor(0, 1);
             lcd.print("You Bust");
-            delay(500);
+            delay(2000);
+            cardBalence -= currentBet;
           }                   
-          cardBalence -= currentBet;
-        } else {
+          
+        else {
           displayDeal = true;
           displayHands();
           if (handTotal[dealer][b] == 21) {
-            while (digitalRead(button) != 0) {
-              lcd.clear();
+            lcd.clear();
               lcd.setCursor(0, 0);
               lcd.print("Dealer Blackjack");
               lcd.setCursor(0, 1);
               lcd.print("You lose");
-              delay(500);
-            }
+              delay(2000);
+            
             cardBalence -= currentBet;
           } else {
             while (dealerCard < 6 && handTotal[dealer][b] < 17) {
@@ -531,32 +530,29 @@ void loop() {
               delay(3000);
             }
             if (handTotal[dealer][b] > 21) {
-              while (digitalRead(button) != 0) {
-                lcd.clear();
+              lcd.clear();
                 lcd.setCursor(0, 0);
                 lcd.print("Dealer Busts");
                 lcd.setCursor(0, 1);
                 lcd.print("You win");
-                delay(500);
-              }
+                delay(2000);
+              
               cardBalence += currentBet;
             } else if (handTotal[dealer][b] == handTotal[player][a]) {
-              while (digitalRead(button) != 0) {
-                lcd.clear();
+              lcd.clear();
                 lcd.print("You Push");
-                delay(500);
-              }
+                delay(2000);
+              
             } else {
               if (handTotal[dealer][b] > handTotal[player][a]) {
-                while (digitalRead(button) != 0) {
-                  lcd.clear();
+                lcd.clear();
                   lcd.print("Dealer Wins");
                   lcd.setCursor(0, 1);
                   lcd.print(handTotal[dealer][b]);
                   lcd.print(" to ");
                   lcd.print(handTotal[player][a]);
-                  delay(500);
-                }
+                  delay(2000);
+               
                 cardBalence -= currentBet;
               } else {
                 while (digitalRead(button) != 0) {
