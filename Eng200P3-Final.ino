@@ -67,6 +67,7 @@ int dealer = 1;
 int cards_dealt = 0;
 int cards[2];
 
+
 void dealCard(int person) {
   int val = deck[cards_dealt];
   handSuits[person][cards[person]] = suits[val];
@@ -192,6 +193,7 @@ int playerCard;
 int dealerCard;
 int eepromAdress;
 int readCardYet = 0;
+int readAddress;
 
 void rfidRead(){
   // Look for new cards
@@ -236,13 +238,33 @@ void rfidRead(){
     readCardYet = 1;
     eepromAdress = 2;
     delay(750);
+  }
+    else if (content.substring(1) == "E3 B1 5D 33") //change here the UID of the card/cards that you want to give access
+  {
+    Serial.println("Admin Found");
+    Serial.println();
+    EEPROM.write(1, 50);
+    EEPROM.write(2,50);
+    readCardYet = 1;
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Resetting");
+    lcd.setCursor(0,1);
+    lcd.print("Balances");
+    delay(2000);
+    reboot();   
+    
     
 
 
   }
 
  else   {
-    Serial.println(" Access denied");
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Error: Invalid");
+    lcd.setCursor(5,1);
+    lcd.print("Card");
     delay(3000);
   }
 } 
@@ -363,10 +385,11 @@ void loop() {
   lcd.print("   Blackjack!");
   if (digitalRead(button) == 0) {
     if (gamesPlayed == 0) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Please Scan Card");
       while (readCardYet == 0) {
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Please Scan Card");
+        
         rfidRead();
       }
     }
@@ -603,23 +626,38 @@ void loop() {
             }
           }
           if (choice == Quit) {
-            lcd.noBlink();
-            readCardYet = 0;
-            lcd.clear();
-            lcd.setCursor(0,0);
-            lcd.print("Scan Card to");
-            lcd.setCursor(0,1);
-            lcd.print("Store Balance");
-            while (readCardYet == 0) {
-              rfidRead();
+            readAddress = eepromAdress;
+            while (1){
+        
+              lcd.noBlink();
+              readCardYet = 0;
+             
+              lcd.clear();
+              lcd.setCursor(0,0);
+              lcd.print("Scan Card to");
+              lcd.setCursor(0,1);
+              lcd.print("Store Balance");
+              while (readCardYet == 0) {
+                rfidRead();
+                }
+              lcd.clear();
+              if (readAddress == eepromAdress) 
+              {
+                lcd.setCursor(0,0);
+                lcd.print("Card Scanned");
+                lcd.setCursor(0,1);
+                lcd.print("Come Again Soon");
+                delay(500);
+                reboot();
+            }
+              else {
+                lcd.setCursor(0,0);
+                lcd.print("Error: Wrong");
+                lcd.setCursor(4,1);
+                lcd.print("Card");
+                delay(1000);
               }
-            lcd.clear();
-            lcd.setCursor(0,0);
-            lcd.print("Card Scanned");
-            lcd.setCursor(0,1);
-            lcd.print("Come Again Soon");
-            delay(500);
-            reboot();
+            }
           }
           lcd.noBlink();
           lcd.clear();
@@ -629,7 +667,7 @@ void loop() {
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("Balence = 0");
-        lcd.setCursor(0, 1);
+        lcd.setCursor(1, 1);
         lcd.print("Scan Card Again?");
         delay(500);
         rfidRead();
